@@ -2,9 +2,9 @@ clear
 clc
 
 RccTH = 0.95;
-RsTH = 150;
-RansacTH = 2;
-ransacRounds = 300;
+RsTH = 250;
+RansacTH = .75;
+ransacRounds = 600;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -111,30 +111,14 @@ bestInlierCount = -1;
 bestH = eye(3);
 for num = 1:ransacRounds
     
-    pointIndices = randi([1 size(pairs,2)], 1, 8);
+    pointIndices = randi([1 size(pairs,2)], 1, 9);
     
-    point1_0 = [pairs(pointIndices(1)).col1 pairs(pointIndices(1)).row1];
-    point2_0 = [pairs(pointIndices(2)).col1 pairs(pointIndices(2)).row1];
-    point3_0 = [pairs(pointIndices(3)).col1 pairs(pointIndices(3)).row1];
-    point4_0 = [pairs(pointIndices(4)).col1 pairs(pointIndices(4)).row1];
-    point5_0 = [pairs(pointIndices(5)).col1 pairs(pointIndices(5)).row1];
-    point6_0 = [pairs(pointIndices(6)).col1 pairs(pointIndices(6)).row1];
-    point7_0 = [pairs(pointIndices(7)).col1 pairs(pointIndices(7)).row1];
-    point8_0 = [pairs(pointIndices(8)).col1 pairs(pointIndices(8)).row1];
+
     
-    point1_1 = [pairs(pointIndices(1)).col2 pairs(pointIndices(1)).row2];
-    point2_1 = [pairs(pointIndices(2)).col2 pairs(pointIndices(2)).row2];
-    point3_1 = [pairs(pointIndices(3)).col2 pairs(pointIndices(3)).row2];
-    point4_1 = [pairs(pointIndices(4)).col2 pairs(pointIndices(4)).row2];
-    point5_1 = [pairs(pointIndices(5)).col2 pairs(pointIndices(5)).row2];
-    point6_1 = [pairs(pointIndices(6)).col2 pairs(pointIndices(6)).row2];
-    point7_1 = [pairs(pointIndices(7)).col2 pairs(pointIndices(7)).row2];
-    point8_1 = [pairs(pointIndices(8)).col2 pairs(pointIndices(8)).row2];
-    
-    A = zeros(9,9);
+    A = zeros(8,9);
     for i = 1:8 
         A(i,:) = [pairs(pointIndices(i)).col1 * pairs(pointIndices(i)).col2,...
-            pairs(pointIndices(i)).col1 * pairs(pointIndices(i)).row2, ...
+            pairs(pointIndices(i)).col1 * pairs(pointIndices(i)).row1, ...
             pairs(pointIndices(i)).col1,...
             pairs(pointIndices(i)).row1 * pairs(pointIndices(i)).col2, ...
             pairs(pointIndices(i)).row1 * pairs(pointIndices(i)).row2, ...
@@ -143,9 +127,8 @@ for num = 1:ransacRounds
             pairs(pointIndices(i)).row2, 1];
     end 
     
-    A(9,:) = [1 1 1 1 1 1 1 1 1]; 
-    [~,~,V] = svd(A); 
-    F = V(9,:); 
+    [~,D,V] = svd(A); 
+    F = V(:,8); 
     [U_f, D_f, V_f] = svd(F); 
     [~, index] = min(D_f); 
     D_f(index) = 0; 
@@ -162,7 +145,7 @@ for num = 1:ransacRounds
         p1 = [x1 y1 1];
         p2 = [x2 y2 1]'; 
 
-        if abs(p1*F*p2)<RansacTH 
+        if abs(p1*F*p2)< RansacTH 
             inliersCount = inliersCount + 1;
             inliers(inliersCount).row1 = pairs(i).row1;
             inliers(inliersCount).col1 = pairs(i).col1;
