@@ -30,15 +30,15 @@ end
 %% Nonmax suppression
  
 [Imag, Idir] = imgradient(image, 'prewitt');
-Imagcells = mat2cell(Imag, [85 85 85 85], [128 128 128 128]);
-cells = mat2cell(Rs, [85 85 85 85], [128 128 128 128]); 
-for i = 1:4
-    for j = 1:4
+Imagcells = mat2cell(Imag, [75 75 75 75 75], [90 90 90 90 90]);
+cells = mat2cell(Rs,[75 75 75 75 75], [90 90 90 90 90]); 
+for i = 1:5
+    for j = 1:5
         vec = reshape(cells{i,j},1,[]); 
         [~, index] = sort(vec, 'descend'); 
-        vec = zeros(85, 128); 
-        vec(index(1:50)) = Imagcells{i,j}(index(1:50));
-         for k = 50:-1:1
+        vec = zeros(75, 90); 
+        vec(index(1:30)) = Imagcells{i,j}(index(1:30));
+         for k = 30:-1:1
             if min(abs(index(1:k-1) - index(k))) < 10 | index(k) < nonMaxThreshold 
                 vec(index(k)) = 0; 
             end 
