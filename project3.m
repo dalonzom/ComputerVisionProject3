@@ -3,8 +3,8 @@ clc
 
 RccTH = 0.95;
 RsTH = 250;
-RansacTH = .75;
-ransacRounds = 600;
+RansacTH = .5;
+ransacRounds = 2000;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -61,7 +61,31 @@ for i = 4:(size(image1,1)-3)
     end
 end
 
-%% Compute Fundamental Matrix using RANSAC 
+%% Compute Fundamental Matrix using RANSAC
+
+%% NORMALIZE POINTS HERE??
+% mean_x_1 = mean([matches.row1]);
+% mean_y_1 = mean([matches.col1]);
+% var1 = var([matches.row1 matches.row2], 0, 'all');
+% T_1 = [var1^-1 0 -mean_x_1; 0 var1^-1 -mean_y_1; 0 0 1];
+% points = [matches.row1; matches.col1; ones(size([matches.row1]))]
+% for i = 1:size([matches.row1],2)
+%     points(:,i) = points(:,i)' * T_1;
+%     matches(i).row1 = points(1,i); 
+%     matches(i).col1 = points(2,i); 
+% end 
+% 
+% mean_x_2 = mean([matches.row2]);
+% mean_y_2 = mean([matches.col2]);
+% var2 = var([matches.row2 matches.row2], 0, 'all');
+% T_2 = [var2^-1 0 -mean_x_2; 0 var2^-1 -mean_y_2; 0 0 1];
+% points = [matches.row2; matches.col2; ones(size([matches.row2]))]
+% for i = 1:size([matches.row2],2)
+%     points(:,i) = points(:,i)' * T_2;
+%     matches(i).row2 = points(1,i); 
+%     matches(i).col2 = points(2,i); 
+% end 
+
 usedPoints1 = struct('row',{},'col',{});
 usedPoints2 = struct('row',{},'col',{});
 pairs = struct();
@@ -112,11 +136,8 @@ bestH = eye(3);
 for num = 1:ransacRounds
     
     pointIndices = randi([1 size(pairs,2)], 1, 9);
-    
-
-    
     A = zeros(8,9);
-    for i = 1:8 
+    for i = 1:8
         A(i,:) = [pairs(pointIndices(i)).col1 * pairs(pointIndices(i)).col2,...
             pairs(pointIndices(i)).col1 * pairs(pointIndices(i)).row1, ...
             pairs(pointIndices(i)).col1,...
@@ -125,15 +146,16 @@ for num = 1:ransacRounds
             pairs(pointIndices(i)).row1, ...
             pairs(pointIndices(i)).col2, ...
             pairs(pointIndices(i)).row2, 1];
-    end 
+    end
     
-    [~,D,V] = svd(A); 
-    F = V(:,8); 
-    [U_f, D_f, V_f] = svd(F); 
-    [~, index] = min(D_f); 
-    D_f(index) = 0; 
-    F = U_f * D_f * transpose(V_f); 
-    F = reshape(F, [3 3]); 
+    [~,D,V] = svd(A);
+    F = V(:,8);
+    [U_f, D_f, V_f] = svd(F);
+    [~, index] = min(D_f);
+    D_f(index) = 0;
+    F = U_f * D_f * transpose(V_f);
+    %F = transpose(T_2) * reshape(F, [3 3]) * T_1; 
+    F = reshape(F, [3 3]);
     inliersCount = 0;
     inliers = struct();
     
@@ -143,9 +165,9 @@ for num = 1:ransacRounds
         y2 = pairs(i).row2;
         x2 = pairs(i).col2;
         p1 = [x1 y1 1];
-        p2 = [x2 y2 1]'; 
-
-        if abs(p1*F*p2)< RansacTH 
+        p2 = [x2 y2 1]';
+        
+        if abs(p1*F*p2)< RansacTH
             inliersCount = inliersCount + 1;
             inliers(inliersCount).row1 = pairs(i).row1;
             inliers(inliersCount).col1 = pairs(i).col1;
@@ -161,19 +183,45 @@ for num = 1:ransacRounds
     end
 end
 
-% Compute a better F? 
-% A = zeros(bestInlierCount*2,8);
-% b = zeros(bestInlierCount*2,1);
+% Compute a better F by using the closest 8 points 
+A = zeros(8,9);
+distance = zeros(bestInlierCount, 1);
+for i = 1:bestInlierCount
+    X = [bestInliers(i).row1 bestInliers(i).col1; bestInliers(i).row2 bestInliers(i).col2];
+    distance(i) = pdist(X, 'euclidean');
+end
+[val, index] = sort(distance);
+for i = 1:8
+    A(i,:) = [bestInliers(index(i)).col1 * bestInliers(index(i)).col2,...
+        bestInliers(index(i)).col1 * bestInliers(index(i)).row1, ...
+        bestInliers(index(i)).col1,...
+        bestInliers(index(i)).row1 * bestInliers(index(i)).col2, ...
+        bestInliers(index(i)).row1 * bestInliers(index(i)).row2, ...
+        bestInliers(index(i)).row1, ...
+        bestInliers(index(i)).col2, ...
+        bestInliers(index(i)).row2, 1];
+end
+
+[~,D,V] = svd(A);
+F = V(:,8);
+[U_f, D_f, V_f] = svd(F);
+[~, index] = min(D_f);
+D_f(index) = 0;
+F = U_f * D_f * transpose(V_f);
+F = reshape(F, [3 3]);
+% F = transpose(T_2) * F * T_1; 
+% points = [bestInliers.row1; bestInliers.col1; ones(size([bestInliers.row1]))]; 
 % for i = 1:bestInlierCount
-%     point1_0 = [bestInliers(i).col1 bestInliers(i).row1];
-%     point1_1 = [bestInliers(i).col2 bestInliers(i).row2];
-%     A(2*i-1,:) = [point1_0 1 0 0 0 (-point1_0*point1_1(1))];
-%     A(2*i,:) = [0 0 0 point1_0 1 (-point1_0*point1_1(2))];
-%     b(2*i-1,1) = point1_1(1);
-%     b(2*i,1) = point1_1(2);
-%     hFlat = A\b;
-%     
-%     totalH = [hFlat(1:3)'; hFlat(4:6)'; hFlat(7:8)' 1];
-% end
+%     points(:,i) = points(:,i)' * inv(T_1);
+%     bestInliers(i).row1 = points(1,i); 
+%     bestInliers(i).col1 = points(2,i); 
+% end 
+% 
+% points = [bestInliers.row2; bestInliers.col2; ones(size([bestInliers.row2]))]; 
+% for i = 1:bestInlierCount
+%     points(:,i) = points(:,i)' * inv(T_2);
+%     bestInliers(i).row2 = points(1,i); 
+%     bestInliers(i).col2 = points(2,i); 
+% end 
 
 
