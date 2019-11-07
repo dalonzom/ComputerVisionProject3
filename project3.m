@@ -184,14 +184,8 @@ for num = 1:ransacRounds
 end
 
 % Compute a better F by using the closest 8 points 
-A = zeros(8,9);
-distance = zeros(bestInlierCount, 1);
-for i = 1:bestInlierCount
-    X = [bestInliers(i).row1 bestInliers(i).col1; bestInliers(i).row2 bestInliers(i).col2];
-    distance(i) = pdist(X, 'euclidean');
-end
-[val, index] = sort(distance);
-for i = 1:8
+A = zeros(size(bestInlierCount,2),9);
+for i = 1:size(bestInlierCount,2)
     A(i,:) = [bestInliers(index(i)).col1 * bestInliers(index(i)).col2,...
         bestInliers(index(i)).col1 * bestInliers(index(i)).row1, ...
         bestInliers(index(i)).col1,...
@@ -224,4 +218,9 @@ F = reshape(F, [3 3]);
 %     bestInliers(i).col2 = points(2,i); 
 % end 
 
+%% Compute Disparity Maps 
+
+corr_window = 50; 
+search_window = 10; 
+similarity_measure = 
 
