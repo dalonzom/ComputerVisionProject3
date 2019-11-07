@@ -1,10 +1,13 @@
 clear
 clc
 
+disparityTH = 0.999;
+maxDisparity = 30;
 RccTH = 0.95;
 RsTH = 250;
 RansacTH = 1e-9;
 ransacRounds = 2000;
+lrCorrTH = 2;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -71,10 +74,10 @@ end
 % points = [matches.row1; matches.col1; ones(size([matches.row1]))]
 % for i = 1:size([matches.row1],2)
 %     points(:,i) = points(:,i)' * T_1;
-%     matches(i).row1 = points(1,i); 
-%     matches(i).col1 = points(2,i); 
-% end 
-% 
+%     matches(i).row1 = points(1,i);
+%     matches(i).col1 = points(2,i);
+% end
+%
 % mean_x_2 = mean([matches.row2]);
 % mean_y_2 = mean([matches.col2]);
 % var2 = var([matches.row2 matches.row2], 0, 'all');
@@ -82,9 +85,9 @@ end
 % points = [matches.row2; matches.col2; ones(size([matches.row2]))]
 % for i = 1:size([matches.row2],2)
 %     points(:,i) = points(:,i)' * T_2;
-%     matches(i).row2 = points(1,i); 
-%     matches(i).col2 = points(2,i); 
-% end 
+%     matches(i).row2 = points(1,i);
+%     matches(i).col2 = points(2,i);
+% end
 
 %%
 mean_x_1 = (size(image1,2)+1)/2;
@@ -95,9 +98,9 @@ T_1 = [var_x_1^-1 0 -mean_x_1; 0 var_y_1^-1 -mean_y_1; 0 0 1];
 points1 = [matches.col1; matches.row1; ones(size([matches.row1]))]
 for i = 1:size([matches.row1],2)
     points1(:,i) = T_1 * points1(:,i);
-    matches(i).col1 = points1(1,i); 
-    matches(i).row1 = points1(2,i); 
-end 
+    matches(i).col1 = points1(1,i);
+    matches(i).row1 = points1(2,i);
+end
 
 mean_x_2 = (size(image2,2)+1)/2;
 mean_y_2 = (size(image2,1)+1)/2;
@@ -107,9 +110,9 @@ T_2 = [var_x_2^-1 0 -mean_x_2; 0 var_y_2^-1 -mean_y_2; 0 0 1];
 points2 = [matches.col2; matches.row2; ones(size([matches.row2]))]
 for i = 1:size([matches.row2],2)
     points2(:,i) = T_2 * points2(:,i);
-    matches(i).col2 = points2(1,i); 
-    matches(i).row2 = points2(2,i); 
-end 
+    matches(i).col2 = points2(1,i);
+    matches(i).row2 = points2(2,i);
+end
 %%
 usedPoints1 = struct('row',{},'col',{});
 usedPoints2 = struct('row',{},'col',{});
@@ -179,7 +182,7 @@ for num = 1:ransacRounds
     [~, index] = min(D_f);
     D_f(index) = 0;
     F = U_f * D_f * transpose(V_f);
-    F = transpose(T_2) * reshape(F, [3 3]) * T_1; 
+    F = transpose(T_2) * reshape(F, [3 3]) * T_1;
     F = reshape(F, [3 3]);
     inliersCount = 0;
     inliers = struct();
@@ -193,7 +196,6 @@ for num = 1:ransacRounds
         p2 = [x2 y2 1]';
         
         if abs(p1*F*p2)< RansacTH
-            abs(p1*F*p2)
             inliersCount = inliersCount + 1;
             inliers(inliersCount).row1 = pairs(i).row1;
             inliers(inliersCount).col1 = pairs(i).col1;
@@ -209,7 +211,7 @@ for num = 1:ransacRounds
     end
 end
 
-% Compute a better F by using the closest 8 points 
+% Compute a better F by using the closest 8 points
 A = zeros(bestInlierCount,9);
 for i = 1:bestInlierCount
     A(i,:) = [bestInliers(i).col1 * bestInliers(i).col2,...
@@ -229,24 +231,95 @@ F = V(:,8);
 D_f(index) = 0;
 F = U_f * D_f * transpose(V_f);
 F = reshape(F, [3 3]);
-F = transpose(T_2) * F * T_1; 
-points1 = [bestInliers.col1; bestInliers.row1; ones(size([bestInliers.row1]))]; 
+F = transpose(T_2) * F * T_1;
+points1 = [bestInliers.col1; bestInliers.row1; ones(size([bestInliers.row1]))];
 for i = 1:bestInlierCount
     points1(:,i) = T_1 \ points1(:,i);
-    bestInliers(i).col1 = points1(1,i); 
-    bestInliers(i).row1 = points1(2,i); 
-end 
+    bestInliers(i).col1 = points1(1,i);
+    bestInliers(i).row1 = points1(2,i);
+end
 
-points2 = [bestInliers.col2; bestInliers.row2; ones(size([bestInliers.row2]))]; 
+points2 = [bestInliers.col2; bestInliers.row2; ones(size([bestInliers.row2]))];
 for i = 1:bestInlierCount
     points2(:,i) = T_2 \ points2(:,i);
-    bestInliers(i).col2 = points2(1,i); 
-    bestInliers(i).row2 = points2(2,i); 
-end 
+    bestInliers(i).col2 = points2(1,i);
+    bestInliers(i).row2 = points2(2,i);
+end
 
-%% Compute Disparity Maps 
+%% Compute Disparity Maps
 
-corr_window = 50; 
-search_window = 10; 
+corr_window = 50;
+search_window = 10;
 %similarity_measure = 
 
+xDisparity = zeros(size(image1));
+yDisparity = zeros(size(image1));
+maxY2 = (size(image2,1)-3);
+maxY1 = (size(image1,1)-3);
+for i = 4:(size(image1,1)-3)
+    i
+    for j = 4:(size(image1,2)-3)
+        bestVal = -1;
+        bestK = -1;
+        bestL = -1;
+        abc = F * [j i 1]';
+        a = -abc(1)/abc(2);
+        b = -abc(3)/abc(2);
+        for l = 4:(size(image2,2)-3)
+            k = round(a*l + b);
+            if k >= 4 && k <= maxY2  && abs(j - l) < maxDisparity
+                value = sum(sum(image1((i-3):(i+3),(j-3):(j+3)) .* image2((k-3):(k+3),(l-3):(l+3))));
+                if value >= bestVal && value >= disparityTH
+                    bestVal = value;
+                    bestL = l;
+                end
+            end
+        end
+        if(bestVal >= disparityTH)
+            xDisparityTemp = bestL-j;
+            bestK = a*bestL + b;
+            yDisparityTemp = bestK-i;
+            
+            bestValTemp = -1;
+            bestJ = -1;
+            kTemp = round(bestK);
+            lTemp = bestL;
+            abc = [lTemp kTemp 1] * F;
+            a = -abc(1)/abc(2);
+            b = -abc(3)/abc(2);
+            for jTemp = 4:(size(image1,2)-3)
+                iTemp = round(a*jTemp + b);
+                if iTemp >= 4 && iTemp <= maxY1 && abs(jTemp - lTemp) < maxDisparity
+                    value = sum(sum(image1((iTemp-3):(iTemp+3),(jTemp-3):(jTemp+3)) ...
+                        .* image2((kTemp-3):(kTemp+3),(lTemp-3):(lTemp+3))));
+                    if value >= bestVal && value >= disparityTH
+                        bestValTemp = value;
+                        bestJ = jTemp;
+                    end
+                end
+            end
+            
+            if bestJ ~= -1
+                if abs(bestJ - j) < lrCorrTH
+                    xDisparityTemp;
+                    yDisparityTemp;
+                    xDisparity(i,j) = xDisparityTemp;
+                    yDisparity(i,j) = yDisparityTemp;
+                end
+            end
+        end
+    end
+end
+
+%% Normalize to images
+absXDisp = abs(xDisparity);
+absYDisp = abs(yDisparity);
+maxX = max(absXDisp(:));
+maxY = max(absYDisp(:));
+xDisparityGrayImage = absXDisp ./ maxX;
+yDisparityGrayImage = absYDisp ./ maxY;
+
+figure(1);
+imshow(xDisparityGrayImage)
+figure(2);
+imshow(yDisparityGrayImage)
