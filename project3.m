@@ -86,6 +86,31 @@ end
 %     matches(i).col2 = points(2,i); 
 % end 
 
+%%
+mean_x_1 = (size(image1,2)+1)/2;
+mean_y_1 = (size(image1,1)+1)/2;
+var_x_1 = var(1:size(image1,2));
+var_y_1 = var(1:size(image1,1));
+T_1 = [var_x_1^-1 0 -mean_x_1; 0 var_y_1^-1 -mean_y_1; 0 0 1];
+points1 = [matches.col1; matches.row1; ones(size([matches.row1]))]
+for i = 1:size([matches.row1],2)
+    points1(:,i) = T_1 * points1(:,i);
+    matches(i).col1 = points1(1,i); 
+    matches(i).row1 = points1(2,i); 
+end 
+
+mean_x_2 = (size(image2,2)+1)/2;
+mean_y_2 = (size(image2,1)+1)/2;
+var_x_2 = var(1:size(image1,2));
+var_y_2 = var(1:size(image1,1));
+T_2 = [var_x_2^-1 0 -mean_x_2; 0 var_y_2^-1 -mean_y_2; 0 0 1];
+points2 = [matches.col2; matches.row2; ones(size([matches.row2]))]
+for i = 1:size([matches.row2],2)
+    points2(:,i) = T_2 * points2(:,i);
+    matches(i).col2 = points2(1,i); 
+    matches(i).row2 = points2(2,i); 
+end 
+%%
 usedPoints1 = struct('row',{},'col',{});
 usedPoints2 = struct('row',{},'col',{});
 pairs = struct();
@@ -203,24 +228,24 @@ F = V(:,8);
 D_f(index) = 0;
 F = U_f * D_f * transpose(V_f);
 F = reshape(F, [3 3]);
-% F = transpose(T_2) * F * T_1; 
-% points = [bestInliers.row1; bestInliers.col1; ones(size([bestInliers.row1]))]; 
-% for i = 1:bestInlierCount
-%     points(:,i) = points(:,i)' * inv(T_1);
-%     bestInliers(i).row1 = points(1,i); 
-%     bestInliers(i).col1 = points(2,i); 
-% end 
-% 
-% points = [bestInliers.row2; bestInliers.col2; ones(size([bestInliers.row2]))]; 
-% for i = 1:bestInlierCount
-%     points(:,i) = points(:,i)' * inv(T_2);
-%     bestInliers(i).row2 = points(1,i); 
-%     bestInliers(i).col2 = points(2,i); 
-% end 
+F = T_2' * F * T_1; 
+points1 = [bestInliers.col1; bestInliers.row1; ones(size([bestInliers.row1]))]; 
+for i = 1:bestInlierCount
+    points1(:,i) = T_1 \ points1(:,i);
+    bestInliers(i).col1 = points1(1,i); 
+    bestInliers(i).row1 = points1(2,i); 
+end 
+
+points2 = [bestInliers.col2; bestInliers.row2; ones(size([bestInliers.row2]))]; 
+for i = 1:bestInlierCount
+    points2(:,i) = T_2 \ points2(:,i);
+    bestInliers(i).col2 = points2(1,i); 
+    bestInliers(i).row2 = points2(2,i); 
+end 
 
 %% Compute Disparity Maps 
 
 corr_window = 50; 
 search_window = 10; 
-similarity_measure = 
+%similarity_measure = 
 
