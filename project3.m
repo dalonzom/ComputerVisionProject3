@@ -3,7 +3,7 @@ clc
 
 RccTH = 0.95;
 RsTH = 250;
-RansacTH = .5;
+RansacTH = 1e-9;
 ransacRounds = 2000;
 
 %% Read in images
@@ -179,7 +179,7 @@ for num = 1:ransacRounds
     [~, index] = min(D_f);
     D_f(index) = 0;
     F = U_f * D_f * transpose(V_f);
-    %F = transpose(T_2) * reshape(F, [3 3]) * T_1; 
+    F = transpose(T_2) * reshape(F, [3 3]) * T_1; 
     F = reshape(F, [3 3]);
     inliersCount = 0;
     inliers = struct();
@@ -193,6 +193,7 @@ for num = 1:ransacRounds
         p2 = [x2 y2 1]';
         
         if abs(p1*F*p2)< RansacTH
+            abs(p1*F*p2)
             inliersCount = inliersCount + 1;
             inliers(inliersCount).row1 = pairs(i).row1;
             inliers(inliersCount).col1 = pairs(i).col1;
@@ -228,7 +229,7 @@ F = V(:,8);
 D_f(index) = 0;
 F = U_f * D_f * transpose(V_f);
 F = reshape(F, [3 3]);
-F = T_2' * F * T_1; 
+F = transpose(T_2) * F * T_1; 
 points1 = [bestInliers.col1; bestInliers.row1; ones(size([bestInliers.row1]))]; 
 for i = 1:bestInlierCount
     points1(:,i) = T_1 \ points1(:,i);
