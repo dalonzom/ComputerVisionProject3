@@ -38,3 +38,23 @@ hold on
 for i = 1:size(bestInliers,2)
     plot([bestInliers(i).col1, bestInliers(i).col2], [bestInliers(i).row1 + shiftNum, bestInliers(i).row2], 'Linewidth', 2);
 end
+
+%%
+
+figure(45);
+imshow(image1Orig);
+hold on;
+
+[x1 y1] = ginput(1);
+x2 = 1:size(image2Orig,2);
+abc = F * [x1 y1 1]';
+a = -abc(1)/abc(2);
+b = -abc(3)/abc(2);
+y2 = a * x2 + b;
+
+plot(x1,y1,'.','MarkerSize',20)
+
+figure(55);
+imshow(image2Orig)
+hold on;
+plot(x2, y2, 'Linewidth', 2)
