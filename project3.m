@@ -250,8 +250,6 @@ corr_window = 50;
 search_window = 10;
 %similarity_measure =
 
-[U, D, V] = svd(F)
-
 %%
 
 % xDisparity = zeros(size(image1));
@@ -313,14 +311,14 @@ search_window = 10;
 % end
 
 %% Normalize to images
-absXDisp = abs(xDisparity);
-absYDisp = abs(yDisparity);
-maxX = max(absXDisp(:));
-maxY = max(absYDisp(:));
-xDisparityGrayImage = absXDisp ./ maxX;
-yDisparityGrayImage = absYDisp ./ maxY;
-
-figure(1);
-imshow(xDisparityGrayImage)
-figure(2);
-imshow(yDisparityGrayImage)
+% absXDisp = abs(xDisparity);
+% absYDisp = abs(yDisparity);
+% maxX = max(absXDisp(:));
+% maxY = max(absYDisp(:));
+% xDisparityGrayImage = absXDisp ./ maxX;
+% yDisparityGrayImage = absYDisp ./ maxY;
+% 
+% figure(1);
+% imshow(xDisparityGrayImage)
+% figure(2);
+% imshow(yDisparityGrayImage)
