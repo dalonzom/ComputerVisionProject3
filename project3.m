@@ -66,28 +66,6 @@ end
 
 %% Compute Fundamental Matrix using RANSAC
 
-%% NORMALIZE POINTS HERE??
-% mean_x_1 = mean([matches.row1]);
-% mean_y_1 = mean([matches.col1]);
-% var1 = var([matches.row1 matches.row2], 0, 'all');
-% T_1 = [var1^-1 0 -mean_x_1; 0 var1^-1 -mean_y_1; 0 0 1];
-% points = [matches.row1; matches.col1; ones(size([matches.row1]))]
-% for i = 1:size([matches.row1],2)
-%     points(:,i) = points(:,i)' * T_1;
-%     matches(i).row1 = points(1,i);
-%     matches(i).col1 = points(2,i);
-% end
-%
-% mean_x_2 = mean([matches.row2]);
-% mean_y_2 = mean([matches.col2]);
-% var2 = var([matches.row2 matches.row2], 0, 'all');
-% T_2 = [var2^-1 0 -mean_x_2; 0 var2^-1 -mean_y_2; 0 0 1];
-% points = [matches.row2; matches.col2; ones(size([matches.row2]))]
-% for i = 1:size([matches.row2],2)
-%     points(:,i) = points(:,i)' * T_2;
-%     matches(i).row2 = points(1,i);
-%     matches(i).col2 = points(2,i);
-% end
 
 %%
 mean_x_1 = (size(image1,2)+1)/2;
@@ -253,7 +231,6 @@ search_window = 10;
 %similarity_measure =
 
 %%
-
 xDisparity = zeros(size(image1));
 yDisparity = zeros(size(image1));
 maxY2 = (size(image2,1)-W);
@@ -320,6 +297,20 @@ xDisparityGrayImage = xDisp ./ max(xDisp(:));
 yDisparityGrayImage = yDisp ./ max(yDisp(:)); 
 %xDisparityGrayImage = medfilt2(xDisparityGrayImage);
 %yDisparityGrayImage = medfilt2(yDisparityGrayImage);
+
+% Calculate length + direction:
+length = sqrt(xDisp.^2 + yDisp.^2);
+length_normalized = length ./ max(length(:)); 
+direction = atan2(yDisp,xDisp); 
+direction_normalized = direction./ max(direction(:)); 
+hsv = ones(375, 450, 3); 
+hsv(:,:,1) = length_normalized; 
+hsv(:,:,2) = direction_normalized;
+hsv(:,:,3) = image1Gray./255;
+rgbIm = hsv2rgb(hsv); 
+grayIm = rgb2gray(rgbIm); 
+figure(10); 
+imshow(grayIm); 
 
 figure(1);
 imshow(xDisparityGrayImage)
