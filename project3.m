@@ -6,7 +6,8 @@ RsTH = 250;
 RansacTH = 1e-9;
 ransacRounds = 2000;
 lrCorrTH = 5;
-searchRadius = 50;
+searchRadius = 100;
+W = 3;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -255,22 +256,22 @@ search_window = 10;
 
 xDisparity = zeros(size(image1));
 yDisparity = zeros(size(image1));
-maxY2 = (size(image2,1)-3);
-maxY1 = (size(image1,1)-3);
-for i = 4:(size(image1,1)-3)
+maxY2 = (size(image2,1)-W);
+maxY1 = (size(image1,1)-W);
+for i = (1+W):(size(image1,1)-W)
     i
-    for j = 4:(size(image1,2)-3)
+    for j = (1+W):(size(image1,2)-W)
         bestVal = Inf;
         bestK = -1;
         bestL = -1;
         abc = F * [j i 1]';
         a = -abc(1)/abc(2);
         b = -abc(3)/abc(2);
-        image1Vals = image1Orig((i-3):(i+3),(j-3):(j+3),:);
-        for l = max(4,j-searchRadius):min((size(image2,2)-3),j+searchRadius)
+        image1Vals = image1Orig((i-W):(i+W),(j-W):(j+W),:);
+        for l = max(1+W,j-searchRadius):min((size(image2,2)-W),j+searchRadius)
             k = round(a*l + b);
-            if k >= 4 && k <= maxY2
-                value = sum(sum(sum((image1Vals - image2Orig((k-3):(k+3),(l-3):(l+3),:)).^2)));
+            if k >= (W+1) && k <= maxY2
+                value = sum(sum(sum((image1Vals - image2Orig((k-W):(k+W),(l-W):(l+W),:)).^2)));
                 if value < bestVal
                     bestVal = value;
                     bestL = l;
@@ -291,11 +292,11 @@ for i = 4:(size(image1,1)-3)
         abc = [lTemp kTemp 1] * F;
         a = -abc(1)/abc(2);
         b = -abc(3)/abc(2);
-        image2Vals = image2Orig((kTemp-3):(kTemp+3),(lTemp-3):(lTemp+3),:);
-        for jTemp = max(4,lTemp-searchRadius):min((size(image1,2)-3),lTemp+searchRadius)
+        image2Vals = image2Orig((kTemp-W):(kTemp+W),(lTemp-W):(lTemp+W),:);
+        for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
             iTemp = round(a*jTemp + b);
-            if iTemp >= 4 && iTemp <= maxY1
-                value = sum(sum(sum((image1Orig((iTemp-3):(iTemp+3),(jTemp-3):(jTemp+3),:) - image2Vals).^2)));
+            if iTemp >= (W+1) && iTemp <= maxY1
+                value = sum(sum(sum((image1Orig((iTemp-W):(iTemp+W),(jTemp-W):(jTemp+W),:) - image2Vals).^2)));
                 if value < bestValTemp
                     bestValTemp = value;
                     bestJ = jTemp;
