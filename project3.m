@@ -5,7 +5,8 @@ RccTH = 0.95;
 RsTH = 250;
 RansacTH = 1e-9;
 ransacRounds = 2000;
-lrCorrTH = 2;
+lrCorrTH = 5;
+searchRadius = 50;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -252,73 +253,74 @@ search_window = 10;
 
 %%
 
-% xDisparity = zeros(size(image1));
-% yDisparity = zeros(size(image1));
-% maxY2 = (size(image2,1)-3);
-% maxY1 = (size(image1,1)-3);
-% for i = 4:(size(image1,1)-3)
-%     i
-%     for j = 4:(size(image1,2)-3)
-%         bestVal = -1e9;
-%         bestK = -1;
-%         bestL = -1;
-%         abc = F * [j i 1]';
-%         a = -abc(1)/abc(2);
-%         b = -abc(3)/abc(2);
-%         image1Vals = image1Orig((i-3):(i+3),(j-3):(j+3),:);
-%         for l = 4:(size(image2,2)-3)
-%             k = round(a*l + b);
-%             if k >= 4 && k <= maxY2
-%                 value = -sum(sum(sum(abs(image1Vals - image2Orig((k-3):(k+3),(l-3):(l+3),:)))));
-%                 if value > bestVal
-%                     bestVal = value;
-%                     bestL = l;
-%                 end
-%             end
-%         end
-%         xDisparityTemp = bestL-j;
-%         bestK = a*bestL + b;
-%         yDisparityTemp = bestK-i;
-%         
-%         bestValTemp = -1e9;
-%         bestJ = -1;
-%         kTemp = round(bestK);
-%         lTemp = bestL;
-%         abc = [lTemp kTemp 1] * F;
-%         a = -abc(1)/abc(2);
-%         b = -abc(3)/abc(2);
-%         image2Vals = image2Orig((kTemp-3):(kTemp+3),(lTemp-3):(lTemp+3),:);
-%         for jTemp = 4:(size(image1,2)-3)
-%             iTemp = round(a*jTemp + b);
-%             if iTemp >= 4 && iTemp <= maxY1
-%                 value = -sum(sum(sum(abs(image1Orig((iTemp-3):(iTemp+3),(jTemp-3):(jTemp+3),:) - image2Vals))));
-%                 if value > bestValTemp
-%                     bestValTemp = value;
-%                     bestJ = jTemp;
-%                 end
-%             end
-%         end
-%         
-%         if bestJ ~= -1
-%             if abs(bestJ - j) < lrCorrTH  && abs(jTemp - lTemp)
-%                 xDisparityTemp;
-%                 yDisparityTemp;
-%                 xDisparity(i,j) = xDisparityTemp;
-%                 yDisparity(i,j) = yDisparityTemp;
-%             end
-%         end
-%     end
-% end
+xDisparity = zeros(size(image1));
+yDisparity = zeros(size(image1));
+maxY2 = (size(image2,1)-3);
+maxY1 = (size(image1,1)-3);
+for i = 4:(size(image1,1)-3)
+    i
+    for j = 4:(size(image1,2)-3)
+        bestVal = Inf;
+        bestK = -1;
+        bestL = -1;
+        abc = F * [j i 1]';
+        a = -abc(1)/abc(2);
+        b = -abc(3)/abc(2);
+        image1Vals = image1Orig((i-3):(i+3),(j-3):(j+3),:);
+        for l = max(4,j-searchRadius):min((size(image2,2)-3),j+searchRadius)
+            k = round(a*l + b);
+            if k >= 4 && k <= maxY2
+                value = sum(sum(sum((image1Vals - image2Orig((k-3):(k+3),(l-3):(l+3),:)).^2)));
+                if value < bestVal
+                    bestVal = value;
+                    bestL = l;
+                end
+            end
+        end
+        xDisparityTemp = bestL-j;
+        bestK = a*bestL + b;
+        yDisparityTemp = bestK-i;
+        
+        xDisparity(i,j) = xDisparityTemp;
+        yDisparity(i,j) = yDisparityTemp;
+        
+        bestValTemp = Inf;
+        bestJ = -1;
+        kTemp = round(bestK);
+        lTemp = bestL;
+        abc = [lTemp kTemp 1] * F;
+        a = -abc(1)/abc(2);
+        b = -abc(3)/abc(2);
+        image2Vals = image2Orig((kTemp-3):(kTemp+3),(lTemp-3):(lTemp+3),:);
+        for jTemp = max(4,lTemp-searchRadius):min((size(image1,2)-3),lTemp+searchRadius)
+            iTemp = round(a*jTemp + b);
+            if iTemp >= 4 && iTemp <= maxY1
+                value = sum(sum(sum((image1Orig((iTemp-3):(iTemp+3),(jTemp-3):(jTemp+3),:) - image2Vals).^2)));
+                if value < bestValTemp
+                    bestValTemp = value;
+                    bestJ = jTemp;
+                end
+            end
+        end
+        
+        if bestJ > -1
+            if abs(bestJ - j) < lrCorrTH
+                xDisparity(i,j) = xDisparityTemp;
+                yDisparity(i,j) = yDisparityTemp;
+            end
+        end
+    end
+end
 
 %% Normalize to images
-% absXDisp = abs(xDisparity);
-% absYDisp = abs(yDisparity);
-% maxX = max(absXDisp(:));
-% maxY = max(absYDisp(:));
-% xDisparityGrayImage = absXDisp ./ maxX;
-% yDisparityGrayImage = absYDisp ./ maxY;
-% 
-% figure(1);
-% imshow(xDisparityGrayImage)
-% figure(2);
-% imshow(yDisparityGrayImage)
+xDisp = xDisparity- min(xDisparity(:));%abs(xDisparity);
+yDisp = yDisparity- min(yDisparity(:));%abs(yDisparity);
+xDisparityGrayImage = xDisp ./ max(xDisp(:));
+yDisparityGrayImage = yDisp ./ max(yDisp(:)); 
+%xDisparityGrayImage = medfilt2(xDisparityGrayImage);
+%yDisparityGrayImage = medfilt2(yDisparityGrayImage);
+
+figure(1);
+imshow(xDisparityGrayImage)
+figure(2);
+imshow(yDisparityGrayImage)
