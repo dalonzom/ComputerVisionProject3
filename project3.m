@@ -245,11 +245,11 @@ for i = (1+W):(size(image1,1)-W)
         abc = F * [j i 1]';
         a = -abc(1)/abc(2);
         b = -abc(3)/abc(2);
-        image1Vals = image1Orig((i-W):(i+W),(j-W):(j+W),:);
+        image1Vals = image1Orig((i-W+1):(i+W),(j-W+1):(j+W),:);
         for l = max(1+W,j-searchRadius):min((size(image2,2)-W),j+searchRadius)
             k = round(a*l + b);
             if k >= (W+1) && k <= maxY2
-                value = sum(sum(sum((image1Vals - image2Orig((k-W):(k+W),(l-W):(l+W),:)).^2)));
+                value = sum(sum(sum((image1Vals - image2Orig((k-W+1):(k+W),(l-W+1):(l+W),:)).^2)));
                 if value < bestVal
                     bestVal = value;
                     bestL = l;
@@ -270,11 +270,11 @@ for i = (1+W):(size(image1,1)-W)
         abc = [lTemp kTemp 1] * F;
         a = -abc(1)/abc(2);
         b = -abc(3)/abc(2);
-        image2Vals = image2Orig((kTemp-W):(kTemp+W),(lTemp-W):(lTemp+W),:);
+        image2Vals = image2Orig((kTemp-W+1):(kTemp+W),(lTemp-W+1):(lTemp+W),:);
         for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
             iTemp = round(a*jTemp + b);
             if iTemp >= (W+1) && iTemp <= maxY1
-                value = sum(sum(sum((image1Orig((iTemp-W):(iTemp+W),(jTemp-W):(jTemp+W),:) - image2Vals).^2)));
+                value = sum(sum(sum((image1Orig((iTemp-W+1):(iTemp+W),(jTemp-W+1):(jTemp+W),:) - image2Vals).^2)));
                 if value < bestValTemp
                     bestValTemp = value;
                     bestJ = jTemp;
