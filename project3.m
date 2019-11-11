@@ -7,12 +7,12 @@ RansacTH = 1e-9;
 ransacRounds = 2000;
 lrCorrTH = 5;
 searchRadius = 100;
-W = 3;
+W = 1;
 
 %% Read in images
-image1Orig = imread('Cones_im2.jpg');
+image1Orig = imread('cast-left.jpg');
 image1Gray = rgb2gray(image1Orig);
-image2Orig = imread('Cones_im6.jpg');
+image2Orig = imread('cast-right.jpg');
 image2Gray = rgb2gray(image2Orig);
 
 %% Harris detector
@@ -229,6 +229,7 @@ end
 corr_window = 50;
 search_window = 10;
 %similarity_measure =
+value = Inf; 
 
 %%
 xDisparity = zeros(size(image1));
@@ -299,14 +300,14 @@ yDisparityGrayImage = yDisp ./ max(yDisp(:));
 %yDisparityGrayImage = medfilt2(yDisparityGrayImage);
 
 % Calculate length + direction:
-length = sqrt(xDisp.^2 + yDisp.^2);
+length = sqrt(xDisparity.^2 + yDisparity.^2);
 length_normalized = length ./ max(length(:)); 
 direction = atan2(yDisp,xDisp); 
 direction_normalized = direction./ max(direction(:)); 
-hsv = ones(375, 450, 3); 
+hsv = rgb2hsv(image1Orig); 
 hsv(:,:,1) = length_normalized; 
 hsv(:,:,2) = direction_normalized;
-hsv(:,:,3) = image1Gray./255;
+%hsv(:,:,3) = .5*ones(375,450);
 rgbIm = hsv2rgb(hsv); 
 grayIm = rgb2gray(rgbIm); 
 figure(10); 
