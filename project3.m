@@ -2,9 +2,9 @@ clear
 clc
 
 RccTH = 0.999;
-RsTH = 150;
+RsTH = 250;
 RansacTH =1e-9;
-ransacRounds = 5000;
+ransacRounds = 2000;
 lrCorrTH = 5;
 searchRadius = 100;
 W = 3;
@@ -241,8 +241,8 @@ for i = (1+W):(size(image1,1)-W)
         bestK = -1;
         bestL = -1;
         abc = F * [j i 1]';
-        a = -abc(1)/abc(3);
-        b = -abc(2)/abc(3);
+        a = -abc(1)/abc(2);
+        b = -abc(3)/abc(2);
         image1Vals = image1Orig((i-W+1):(i+W),(j-W+1):(j+W),:);
         for l = max(1+W,j-searchRadius):min((size(image2,2)-W),j+searchRadius)
             k = round(a*l + b);
@@ -265,30 +265,30 @@ for i = (1+W):(size(image1,1)-W)
         bestJ = -1;
         kTemp = round(a*bestL + b);
         lTemp = bestL;
-        a
-        b
-        abc = [lTemp kTemp 1] * F;
-        a = -abc(1)/abc(2);
-        b = -abc(3)/abc(2);
-    
-        image2Vals = image2Orig(max((kTemp-W+1),1):min((kTemp+W), size(image2Orig,1)),max((lTemp-W+1),1):min((lTemp+W), size(image2Orig,2)),:);
-        for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
-            iTemp = round(a*jTemp + b);
-            if iTemp >= (W+1) && iTemp <= maxY1
-                value = sum(sum(sum((image1Orig((iTemp-W+1):(iTemp+W),(jTemp-W+1):(jTemp+W),:) - image2Vals).^2)));
-                if value < bestValTemp
-                    bestValTemp = value;
-                    bestJ = jTemp;
-                end
-            end
-        end
-        
-        if bestJ > -1
-            if abs(bestJ - j) < lrCorrTH
-                xDisparity(i,j) = xDisparityTemp;
-                yDisparity(i,j) = yDisparityTemp;
-            end
-        end
+%         a
+%         b
+%         abc = [lTemp kTemp 1] * F;
+%         a = -abc(1)/abc(2);
+%         b = -abc(3)/abc(2);
+%     
+%         image2Vals = image2Orig(max((kTemp-W+1),1):min((kTemp+W), size(image2Orig,1)),max((lTemp-W+1),1):min((lTemp+W), size(image2Orig,2)),:);
+%         for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
+%             iTemp = round(a*jTemp + b);
+%             if iTemp >= (W+1) && iTemp <= maxY1
+%                 value = sum(sum(sum((image1Orig((iTemp-W+1):(iTemp+W),(jTemp-W+1):(jTemp+W),:) - image2Vals).^2)));
+%                 if value < bestValTemp
+%                     bestValTemp = value;
+%                     bestJ = jTemp;
+%                 end
+%             end
+%         end
+%         
+%         if bestJ > -1
+%             if abs(bestJ - j) < lrCorrTH
+%                 xDisparity(i,j) = xDisparityTemp;
+%                 yDisparity(i,j) = yDisparityTemp;
+%             end
+%        end
     end
 end
 
