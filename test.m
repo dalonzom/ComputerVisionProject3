@@ -3,10 +3,10 @@
 % figure; 
 % % Rs = harrisDetector(imageGray, 100);
 % figure
-%  image('CData', image2Orig,'XData',[1 512], 'YData', [-1 -340])
-% for i = 1:size(Rs2,1)
-%     for j = 1:size(Rs2,2)
-%         if(Rs2(i,j)>=250)
+%  image('CData', image1Orig,'XData',[1 576], 'YData', [-1 -384])
+% for i = 1:size(Rs1,1)
+%     for j = 1:size(Rs1,2)
+%         if(Rs1(i,j)>=150)
 %             hold on
 %             plot(j,-i,'.','MarkerSize',40)
 %         end
@@ -39,7 +39,7 @@ for i = 1:size(bestInliers,2)
     plot([bestInliers(i).col1, bestInliers(i).col2], [bestInliers(i).row1 + shiftNum, bestInliers(i).row2], 'Linewidth', 2);
 end
 
-%%
+%% 
 
 figure(45);
 imshow(image1Orig);

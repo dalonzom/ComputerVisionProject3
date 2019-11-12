@@ -1,18 +1,18 @@
 clear
 clc
 
-RccTH = 0.999;
-RsTH = 150;
-RansacTH =1e-9;
-ransacRounds = 5000;
+RccTH = 0.95;
+RsTH = 250;
+RansacTH = 1e-9;
+ransacRounds = 2000;
 lrCorrTH = 5;
 searchRadius = 100;
-W = 3;
+W = 1;
 
 %% Read in images
-image1Orig = imread('Cones_im2.jpg');
+image1Orig = imread('cast-left.jpg');
 image1Gray = rgb2gray(image1Orig);
-image2Orig = imread('Cones_im6.jpg');
+image2Orig = imread('cast-right.jpg');
 image2Gray = rgb2gray(image2Orig);
 
 %% Harris detector
@@ -89,7 +89,7 @@ for i = 1:size([matches.row2],2)
     matches(i).col2 = points2(1,i);
     matches(i).row2 = points2(2,i);
 end
-%
+%%
 usedPoints1 = struct('row',{},'col',{});
 usedPoints2 = struct('row',{},'col',{});
 pairs = struct();
@@ -136,6 +136,7 @@ for count = 1:size(matches,2)
 end
 
 bestInlierCount = -1;
+bestH = eye(3);
 for num = 1:ransacRounds
     
     pointIndices = randi([1 size(pairs,2)], 1, 9);
@@ -223,8 +224,8 @@ end
 
 %% Compute Disparity Maps
 
-corr_window = 50;
-search_window = 10;
+corr_window = 10;
+search_window = 5;
 %similarity_measure =
 value = Inf; 
 
@@ -233,7 +234,6 @@ xDisparity = zeros(size(image1));
 yDisparity = zeros(size(image1));
 maxY2 = (size(image2,1)-W);
 maxY1 = (size(image1,1)-W);
-
 for i = (1+W):(size(image1,1)-W)
     i
     for j = (1+W):(size(image1,2)-W)
@@ -241,8 +241,8 @@ for i = (1+W):(size(image1,1)-W)
         bestK = -1;
         bestL = -1;
         abc = F * [j i 1]';
-        a = -abc(1)/abc(3);
-        b = -abc(2)/abc(3);
+        a = -abc(1)/abc(2);
+        b = -abc(3)/abc(2);
         image1Vals = image1Orig((i-W+1):(i+W),(j-W+1):(j+W),:);
         for l = max(1+W,j-searchRadius):min((size(image2,2)-W),j+searchRadius)
             k = round(a*l + b);
@@ -263,15 +263,13 @@ for i = (1+W):(size(image1,1)-W)
         
         bestValTemp = Inf;
         bestJ = -1;
-        kTemp = round(a*bestL + b);
+        kTemp = round(bestK);
         lTemp = bestL;
-        a
-        b
         abc = [lTemp kTemp 1] * F;
         a = -abc(1)/abc(2);
         b = -abc(3)/abc(2);
-    
-        image2Vals = image2Orig(max((kTemp-W+1),1):min((kTemp+W), size(image2Orig,1)),max((lTemp-W+1),1):min((lTemp+W), size(image2Orig,2)),:);
+        temp
+        image2Vals = image2Orig((kTemp-W+1):(kTemp+W),(lTemp-W+1):(lTemp+W),:);
         for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
             iTemp = round(a*jTemp + b);
             if iTemp >= (W+1) && iTemp <= maxY1
@@ -308,19 +306,13 @@ direction_normalized = direction./ max(direction(:));
 hsv = rgb2hsv(image1Orig); 
 hsv(:,:,1) = length_normalized; 
 hsv(:,:,2) = direction_normalized;
+%hsv(:,:,3) = .5*ones(375,450);
 rgbIm = hsv2rgb(hsv); 
 grayIm = rgb2gray(rgbIm); 
 figure(10); 
-hold on; 
-imshow(grayIm);
-title('HSV Vector')
+imshow(grayIm); 
 
 figure(1);
-hold on;
 imshow(xDisparityGrayImage)
-title('xDisparity')
-
 figure(2);
-hold on; 
 imshow(yDisparityGrayImage)
-title('yDisparity')
