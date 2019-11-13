@@ -2,12 +2,13 @@ clear
 clc
 
 RccTH = 0.999;
-RsTH = 250;
+RsTH = 150;
 RansacTH =1e-9;
-ransacRounds = 2000;
+ransacRounds = 5000;
 lrCorrTH = 5;
 searchRadius = 100;
 W = 3;
+valTh = 300;
 
 %% Read in images
 image1Orig = imread('Cones_im2.jpg');
@@ -229,19 +230,19 @@ search_window = 10;
 value = Inf; 
 
 %%
-xDisparity = zeros(size(image1));
-yDisparity = zeros(size(image1));
+xDisparity = -searchRadius*ones(size(image1));
+yDisparity = -0.1*ones(size(image1));
 maxY2 = (size(image2,1)-W);
 maxY1 = (size(image1,1)-W);
 
 for i = (1+W):(size(image1,1)-W)
     i
     for j = (1+W):(size(image1,2)-W)
-        bestVal = Inf;
+        bestVal = valTh;
         bestK = -1;
         bestL = -1;
         abc = F * [j i 1]';
-        a = -abc(1)/abc(2);
+        a = -abc(1)/abc(3);
         b = -abc(3)/abc(2);
         image1Vals = image1Orig((i-W+1):(i+W),(j-W+1):(j+W),:);
         for l = max(1+W,j-searchRadius):min((size(image2,2)-W),j+searchRadius)
@@ -258,19 +259,26 @@ for i = (1+W):(size(image1,1)-W)
         bestK = a*bestL + b;
         yDisparityTemp = bestK-i;
         
+        if abs(xDisparityTemp) > searchRadius
+            continue
+        end
+        
         xDisparity(i,j) = xDisparityTemp;
         yDisparity(i,j) = yDisparityTemp;
         
-        bestValTemp = Inf;
-        bestJ = -1;
-        kTemp = round(a*bestL + b);
-        lTemp = bestL;
-%         a
-%         b
+%         bestValTemp = valTh;
+%         bestJ = -1;
+%         kTemp = round(a*bestL + b);
+%         lTemp = bestL;
+% 
 %         abc = [lTemp kTemp 1] * F;
 %         a = -abc(1)/abc(2);
 %         b = -abc(3)/abc(2);
-%     
+%         
+%         if(kTemp-W+1 < 1 || kTemp+W > size(image2Orig, 1) || (lTemp-W+1) < 1 || (lTemp+W) > size(image2Orig,2))
+%             continue
+%         end
+%         
 %         image2Vals = image2Orig(max((kTemp-W+1),1):min((kTemp+W), size(image2Orig,1)),max((lTemp-W+1),1):min((lTemp+W), size(image2Orig,2)),:);
 %         for jTemp = max(W+1,lTemp-searchRadius):min((size(image1,2)-W),lTemp+searchRadius)
 %             iTemp = round(a*jTemp + b);
@@ -288,7 +296,7 @@ for i = (1+W):(size(image1,1)-W)
 %                 xDisparity(i,j) = xDisparityTemp;
 %                 yDisparity(i,j) = yDisparityTemp;
 %             end
-%        end
+%         end
     end
 end
 
@@ -302,17 +310,18 @@ yDisparityGrayImage = yDisp ./ max(yDisp(:));
 
 % Calculate length + direction:
 length = sqrt(xDisparity.^2 + yDisparity.^2);
-length_normalized = length ./ max(length(:)); 
+length_normalized = 1 - length ./ max(length(:)); 
 direction = atan2(yDisp,xDisp); 
 direction_normalized = direction./ max(direction(:)); 
+valueNormalized = ceil(length_normalized);
 hsv = rgb2hsv(image1Orig); 
-hsv(:,:,1) = length_normalized; 
-hsv(:,:,2) = direction_normalized;
+hsv(:,:,1) = direction_normalized; 
+hsv(:,:,2) = length_normalized;
+hsv(:,:,3) = valueNormalized;
 rgbIm = hsv2rgb(hsv); 
-grayIm = rgb2gray(rgbIm); 
 figure(10); 
 hold on; 
-imshow(grayIm);
+imshow(rgbIm);
 title('HSV Vector')
 
 figure(1);
